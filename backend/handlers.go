@@ -31,9 +31,7 @@ func addChannel(client *Client, data interface{}) {
 }
 
 func subscribeChannel(client *Client, data interface{}) {
-	result := make(chan r.ChangeResponse)
 	stop := client.NewStopChannel(CHANNEL_KEY)
-
 	cursor, err := r.Table("channel").
 		Changes(r.ChangesOpts{IncludeInitial: true}).
 		Run(client.session)
@@ -41,7 +39,20 @@ func subscribeChannel(client *Client, data interface{}) {
 	if err != nil {
 		client.send <- MessageToClient{"error", err.Error()}
 	}
+	changeResponseFunc := func(changeResponse r.ChangeResponse) {
+		if changeResponse.NewValue != nil && changeResponse.OldValue == nil {
+			client.send <- MessageToClient{"channel add", changeResponse.NewValue}
+			//} else if changeResponse.NewValue != nil && changeResponse.OldValue != nil {
+			//
+			//} else {
+			println("send channel-add message")
+		}
+	}
+	subscribe(stop, cursor, client, changeResponseFunc)
+}
 
+func subscribe(stop chan bool, cursor *r.Cursor, client *Client, changeRespondFunc func(r.ChangeResponse)) {
+	result := make(chan r.ChangeResponse)
 	go func() {
 		var changeResponse r.ChangeResponse
 		for cursor.Next(&changeResponse) {
@@ -56,14 +67,7 @@ func subscribeChannel(client *Client, data interface{}) {
 				cursor.Close()
 				return
 			case changeResponse := <-result:
-				if changeResponse.NewValue != nil && changeResponse.OldValue == nil {
-					client.send <- MessageToClient{"channel add", changeResponse.NewValue}
-					//} else if changeResponse.NewValue != nil && changeResponse.OldValue != nil {
-					//
-					//} else {
-					println("send channel-add message")
-				}
-
+				changeRespondFunc(changeResponse)
 			}
 		}
 	}()
@@ -93,7 +97,6 @@ func addUser(client *Client, data interface{}) {
 }
 
 func subscribeUser(client *Client, data interface{}) {
-	result := make(chan r.ChangeResponse)
 	stop := client.NewStopChannel(USER_KEY)
 
 	cursor, err := r.Table("user").
@@ -104,32 +107,17 @@ func subscribeUser(client *Client, data interface{}) {
 		client.send <- MessageToClient{"error", err.Error()}
 	}
 
-	go func() {
-		var changeResponse r.ChangeResponse
-		for cursor.Next(&changeResponse) {
-			result <- changeResponse
+	changeResponseFunc := func(changeResponse r.ChangeResponse){
+		fmt.Printf("%#v\n", changeResponse)
+		if changeResponse.NewValue != nil && changeResponse.OldValue == nil {
+			client.send <- MessageToClient{"user add", changeResponse.NewValue}
+			println("send user-add message")
+		} else if changeResponse.OldValue != nil {
+			client.send <- MessageToClient{"user remove", changeResponse.OldValue}
+			fmt.Println("send user-remove message")
 		}
-	}()
-
-	go func() {
-		for {
-			select {
-			case <-stop:
-				cursor.Close()
-				return
-			case changeResponse := <-result:
-				fmt.Printf("%#v\n", changeResponse)
-				if changeResponse.NewValue != nil && changeResponse.OldValue == nil {
-					client.send <- MessageToClient{"user add", changeResponse.NewValue}
-					println("send user-add message")
-				} else if changeResponse.OldValue != nil {
-					client.send <- MessageToClient{"user remove", changeResponse.OldValue}
-					fmt.Println("send user-remove message")
-				}
-
-			}
-		}
-	}()
+	}
+	subscribe(stop, cursor, client, changeResponseFunc)
 }
 
 func unsubscribeMessage(client *Client, data interface{}) {
@@ -137,7 +125,6 @@ func unsubscribeMessage(client *Client, data interface{}) {
 }
 
 func subscribeMessage(client *Client, data interface{}) {
-	result := make(chan r.ChangeResponse)
 	stop := client.NewStopChannel(MESSAGE_KEY)
 	var activeChannel struct {
 		ChannelId string `json:"channelId"`
@@ -151,6 +138,7 @@ func subscribeMessage(client *Client, data interface{}) {
 	client.activeChannel = activeChannel.ChannelId
 	cursor, err := r.Table("message").
 		Filter(r.Row.Field("channelId").Eq(activeChannel.ChannelId)).
+		//OrderBy(r.OrderByOpts{Index: "createdAt"}).
 		Changes(r.ChangesOpts{IncludeInitial: true}).
 		Run(client.session)
 
@@ -158,25 +146,12 @@ func subscribeMessage(client *Client, data interface{}) {
 		client.send <- MessageToClient{"error", err.Error()}
 	}
 
-	go func() {
-		var changeResponse r.ChangeResponse
-		for cursor.Next(&changeResponse) {
-			result <- changeResponse
-		}
-	}()
+	changeResponseFunc := func(changeResponse r.ChangeResponse) {
+		client.send <- MessageToClient{"message add", changeResponse.NewValue}
+		fmt.Println("sending Message to client")
+	}
 
-	go func() {
-		for {
-			select {
-			case <-stop:
-				cursor.Close()
-				return
-			case changeResponse := <-result:
-				client.send <- MessageToClient{"message add", changeResponse.NewValue}
-				fmt.Println("sending Message to client")
-			}
-		}
-	}()
+	subscribe(stop, cursor, client, changeResponseFunc)
 }
 
 func addMessage(client *Client, data interface{}) {
