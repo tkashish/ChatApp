@@ -27,7 +27,7 @@ type Message struct {
 func main() {
 	session, err := r.Connect(r.ConnectOpts{
 		Address:  "localhost:28015",
-		Database: "chatter",
+		Database: "rtsupport",
 	})
 
 	if err != nil {

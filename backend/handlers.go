@@ -5,6 +5,7 @@ import (
 	r "github.com/dancannon/gorethink"
 	"fmt"
 	"time"
+	"github.com/satori/go.uuid"
 )
 
 const (
@@ -163,11 +164,12 @@ func addMessage(client *Client, data interface{}) {
 		client.send <- MessageToClient{"error", err.Error()}
 		return
 	}
-
+	uniqueId := uuid.Must(uuid.NewV4())
 	message := Message{
 		Author:    client.author,
 		ChannelId: client.activeChannel,
 		CreatedAt: time.Now().Format("2006-01-02 3:4:5 PM"),
+		Id: uniqueId.String(),
 		Message:   messageBody.Message,
 	}
 	go func() {
