@@ -6,7 +6,13 @@ import { List } from 'semantic-ui-react';
 class ChannelList extends Component{
   render(){
     return(
-      <List size={'big'}>{
+      <List
+        selection
+        style={listStyle}
+        animated
+        verticalAlign='middle'
+        size={'large'}
+      >{
           this.props.channels.map( (chan, index) =>{
             return <Channel
               channel={chan}
@@ -23,5 +29,13 @@ ChannelList.propTypes = {
   channels: PropTypes.array.isRequired,
   setChannel: PropTypes.func.isRequired
 }
+
+var listStyle = {
+  maxWidth: 'none',
+  marginRight: '15px',
+  marginLeft: '15px',
+  height: '100%'
+}
+
 
 export default ChannelList

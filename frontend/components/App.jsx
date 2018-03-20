@@ -1,8 +1,7 @@
 import React, {Component} from 'react';
-import ChannelSection from './channels/ChannelSection.jsx';
-import UserSection from './users/UserSection.jsx';
-import MessageSection from './messages/MessageSection.jsx';
-import {Grid, Segment, Container, Divider, Message, Table} from 'semantic-ui-react';
+import {Container, Grid, Image} from 'semantic-ui-react';
+import AuthenticationSection from './authentication/AuthenticationSection.jsx';
+import AppSection from './AppSection.jsx';
 import Socket from '../socket.js';
 class App extends Component{
   constructor(props){
@@ -10,14 +9,59 @@ class App extends Component{
     this.state = {
       channels: [],
       users: [],
-      messages: [],
       errors: '',
       connected: false,
       activeChannel: {
         name: ''
       },
-      showAddUserForm: true
+      showAddUserForm: true,
+      authenticationError : [],
+      signupError : [],
+      user : {},
+      authenticated : false,
+      messages: [],
     };
+  }
+
+  authenticate(email, password){
+    var authenticationError = [];
+    let {user} = this.state;
+    if(user.email != email){
+      authenticationError.push("Invalid email")
+    }
+    if(user.password != password){
+      authenticationError.push("Incorrect password")
+    }
+    this.setState({authenticationError});
+    if(authenticationError.length == 0){
+      let cred = {
+        "email":email,
+        "password":password
+      };
+      // make a request to server
+      let {authenticated} = this.state;
+      authenticated = true;
+      this.setState({authenticated});
+    }
+  }
+
+  signup(firstName, lastName, email, password, avatarUrl ,resetToSignIn){
+    let user = this.state.user;
+    user.firstName = firstName;
+    user.lastName = lastName;
+    user.email = email;
+    user.password = password;
+    user.avatarUrl = avatarUrl;
+    this.setState({user})
+    var signupError = [];
+    if(signupError.length == 0){
+      resetToSignIn();
+    }
+  }
+
+  resetErrorsOnSignin(){
+    var authenticationError = [];
+    this.setState({authenticationError});
   }
 
   isMessageFromCurrentUser(author){
@@ -28,13 +72,13 @@ class App extends Component{
   }
 
   addChannel(name){
-    this.socket.emit('channel add', {name});
+    this.serviceSocket.emit('channel add', {name});
   }
   setChannel(activeChannel){
     this.setState({activeChannel});
-    this.socket.emit('message unsubscribe');
+    this.serviceSocket.emit('message unsubscribe');
     this.setState({messages: []});
-    this.socket.emit('message subscribe', {
+    this.serviceSocket.emit('message subscribe', {
       channelId: activeChannel.id
     });
   }
@@ -44,13 +88,12 @@ class App extends Component{
     }
     let activeUser = name
     this.setState({activeUser});
-    this.socket.emit('user add', {name});
+    this.serviceSocket.emit('user add', {name});
     this.setState({
       showAddUserForm: false
     })
   }
   setUser(activeUser){
-    console.log(activeUser);
   }
 
   addMessage(message){
@@ -62,21 +105,21 @@ class App extends Component{
       errors.push("Please select a Channel");
     }
     if(errors.length == 0){
-      this.socket.emit('message add', {message});
+      this.serviceSocket.emit('message add', {message});
     }
     this.setState({errors});
   }
 
   componentDidMount(){
-    let ws = new WebSocket('ws://localhost:4000')
-    let socket = this.socket = new Socket(ws);
-    socket.on('connect', this.onConnect.bind(this));
-    socket.on('disconnect', this.onDisconnect.bind(this));
-    socket.on('channel add', this.onAddChannel.bind(this));
-    socket.on('user add', this.onAddUser.bind(this));
-    socket.on('user edit', this.onEditUser.bind(this));
-    socket.on('user remove', this.onRemoveUser.bind(this));
-    socket.on('message add', this.onMessageAdd.bind(this));
+    let serviceWS = new WebSocket('ws://'+SERVICE_URL);
+    let serviceSocket = this.serviceSocket = new Socket(serviceWS);
+    serviceSocket.on('connect',     this.onConnect.bind(this));
+    serviceSocket.on('disconnect',  this.onDisconnect.bind(this));
+    serviceSocket.on('channel add', this.onAddChannel.bind(this));
+    serviceSocket.on('user add',    this.onAddUser.bind(this));
+    serviceSocket.on('user edit',   this.onEditUser.bind(this));
+    serviceSocket.on('user remove', this.onRemoveUser.bind(this));
+    serviceSocket.on('message add', this.onMessageAdd.bind(this));
   }
 
   onAddChannel(channel){
@@ -86,22 +129,17 @@ class App extends Component{
   }
 
   onMessageAdd(message){
-      console.log(message);
       let {messages} = this.state;
       messages.push(message);
       this.setState({messages})
   }
 
   onRemoveUser(removeUser){
-    console.log(removeUser);
     let {users} = this.state;
-    console.log(users);
     users = users.filter( user => {
       return removeUser.id != user.id;
     });
-    console.log(users);
     this.setState({users});
-    console.log(this.state.users);
   }
 
   onAddUser(user){
@@ -124,8 +162,8 @@ class App extends Component{
 
   onConnect(){
     this.setState({connected: true});
-    this.socket.emit('channel subscribe');
-    this.socket.emit('user subscribe');
+    this.serviceSocket.emit('channel subscribe');
+    this.serviceSocket.emit('user subscribe');
   }
 
   onDisconnect(){
@@ -133,47 +171,35 @@ class App extends Component{
   }
 
   render(){
-    const errors = this.state.errors;
-    let errorMessage = null;
-    if(errors.length != 0){
-      errorMessage = <Message
-                      error
-                      header='Errors'
-                      list={errors}
-                      size='mini'
-                    />
+    var app = null;
+    // if ( this.state.authenticated ){
+    if ( true ){
+      app = <AppSection
+                channels={this.state.channels}
+                addChannel={this.addChannel.bind(this)}
+                setChannel={this.setChannel.bind(this)}
+                addMessage={this.addMessage.bind(this)}
+                messages={this.state.messages}
+                isMessageFromCurrentUser={this.isMessageFromCurrentUser.bind(this)}
+                users={this.state.users}
+                addUser={this.addUser.bind(this)}
+                setUser={this.setUser.bind(this)}
+                showAddUserForm={this.state.showAddUserForm}
+              />;
+    } else {
+      app = <AuthenticationSection
+        authenticate={this.authenticate.bind(this)}
+        authenticationError={this.state.authenticationError}
+        resetErrorsOnSignin={this.resetErrorsOnSignin.bind(this)}
+        signup={this.signup.bind(this)}
+      />;
     }
     return(
-      <Container fluid>
-        <Grid padded style={{ height: '100%' }} >
-          <Grid.Row>
-            <Grid.Column width={6}>
-              <ChannelSection
-                   channels={this.state.channels}
-                   addChannel={this.addChannel.bind(this)}
-                   setChannel={this.setChannel.bind(this)}
-              />
-              <UserSection
-                   users={this.state.users}
-                   addUser={this.addUser.bind(this)}
-                   setUser={this.setUser.bind(this)}
-                   showAddUserForm={this.state.showAddUserForm}
-              />
-            </Grid.Column>
-            <Grid.Column width={10}>
-              {errorMessage}
-              <MessageSection
-                  activeChannel={this.state.activeChannel}
-                  messages={this.state.messages}
-                  addMessage={this.addMessage.bind(this)}
-                  isMessageFromCurrentUser={this.isMessageFromCurrentUser.bind(this)}
-              />
-            </Grid.Column>
-          </Grid.Row>
-        </Grid>
-      </Container>
+        <Container fluid style={{minWidth: '100%'}}>
+          {app}
+        </Container>
     )
   }
 }
 
-export default App
+export default App;

@@ -7,34 +7,42 @@ import {Card, Label} from 'semantic-ui-react';
 class ChannelSection extends Component{
   render(){
     return(
-      <Card fluid color='blue' style={cardStyle}>
-        <br/>
-        <Card.Header>
-          <Label color='blue' size='big' attached='top'>Channels</Label>
-        </Card.Header>
-        <br/>
-        <Card.Content style={listStyle}>
+      <div
+        style={cardStyle}>
+        <div style={listStyle}>
           <ChannelList
             channels={this.props.channels}
             setChannel={this.props.setChannel}
           />
-        </Card.Content>
-        <Card.Content extra>
+        </div>
+        <div style={formStyle}>
           <ChannelForm
           addChannel={this.props.addChannel}
           />
-        </Card.Content>
-      </Card>
+        </div>
+      </div>
     )
   }
 }
 
 var cardStyle = {
-  height : '50%'
+  display: 'block',
+  height : '100%'
 };
 
 var listStyle = {
-  overflow : 'auto'
+  height: '95%',
+  boxSizing: 'border-box',
+  overflowX: 'hidden',
+  overflowY: 'auto',
+  position: 'relative'
+};
+
+
+var formStyle = {
+  position: 'absolute',
+  height: '5%',
+  width: '100%',
 };
 
 ChannelSection.propTypes = {

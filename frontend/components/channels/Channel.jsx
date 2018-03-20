@@ -12,6 +12,7 @@ class Channel extends Component{
     const {channel} = this.props;
 		return(
 			<List.Item
+        style={itemStyle}
 				as='a'
 				onClick={this.onClick.bind(this)}
 				>
@@ -24,6 +25,15 @@ class Channel extends Component{
 Channel.propTypes = {
 	channel: PropTypes.object.isRequired,
 	setChannel: PropTypes.func.isRequired
+}
+
+var itemStyle = {
+  color: 'black',
+  borderRadius: '0em',
+  paddingTop: '10px',
+  paddingBottom: '10px',
+  borderBottom: '1px solid lightgrey',
+  paddingLeft: '20px',
 }
 
 export default Channel

@@ -1,13 +1,21 @@
-// var IconsPlugin = require('./node_modules/icons-loader/IconsPlugin');
-//
-// const RUN_TIMESTAMP = Math.round(Date.now() / 1000)
 
+var webpack = require('webpack');
+var UglifyJSPlugin = require('uglifyjs-webpack-plugin');
 module.exports = {
+  devtool: 'cheap-module-source-map',
   entry: './index.js',
   output: {
     path: __dirname,
     filename: 'bundle.js'
   },
+  plugins: [
+    new webpack.optimize.UglifyJsPlugin(),
+    new webpack.DefinePlugin({
+      'process.env.NODE_ENV': JSON.stringify('production'),
+      'SERVICE_URL': JSON.stringify("localhost:4000"),
+      'AUTHENTICATION_SERVER_URL': JSON.stringify("localhost:5000") 
+    })
+  ],
   module: {
     loaders: [
       {

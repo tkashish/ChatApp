@@ -4,19 +4,25 @@ import {Form} from 'semantic-ui-react';
 
 class MessageForm extends Component{
   onSubmit(e){
-    e.preventDefault();
-    const node = this.refs.message;
-    const messageContent  = node.value;
-    if(messageContent != ''){
-      this.props.addMessage(messageContent);
+    if(e.key === 'Enter'){
+      e.preventDefault();
+      const messageContent  = e.target.value;
+      if(messageContent != ''){
+        this.props.addMessage(messageContent);
+      }
+      e.target.value = ''
     }
-    node.value = ''
   }
   render(){
     return(
-      <Form attached='bottom' onSubmit={this.onSubmit.bind(this)}>
-        <Form.Field>
-          <input placeholder='Type Message' type='text' ref='message'/>
+      <Form style={formStyle}>
+        <Form.Field style={{height: '100%'}}>
+          <Form.TextArea
+            style={formInputStyle}
+            placeholder='Type Message'
+            type='text'
+            onKeyUp={this.onSubmit.bind(this)}
+          />
         </Form.Field>
       </Form>
     )
@@ -25,6 +31,18 @@ class MessageForm extends Component{
 
 MessageForm.propTypes={
   addMessage: PropTypes.func.isRequired,
+}
+
+var formStyle = {
+  position: 'relative',
+  height: '100%'
+};
+
+var formInputStyle = {
+  height: '100%',
+  border: '0px',
+  borderRadius: '0px',
+  borderTop: '1px solid rgba(34,36,38,.15)'
 }
 
 export default MessageForm

@@ -6,41 +6,47 @@ import {Card, Label} from 'semantic-ui-react';
 
 class UserSection extends Component{
   render(){
-    var AddUserForm = null
-
-    if(this.props.showAddUserForm){
-      AddUserForm =  <Card.Content extra>
-                      <UserForm
-                      addUser={this.props.addUser}
-                      />
-                    </Card.Content>
-    }
-    return(
-      <Card fluid color='blue' style={cardStyle}>
-        <br/>
-        <Card.Header>
-          <Label color='blue' size='big' attached='top'>Users</Label>
-        </Card.Header>
-        <br/>
-        <Card.Content style={listStyle}>
+    return (
+      <div style={cardStyle}>
+        <div style={listStyle}>
           <UserList
-            users={this.props.users}
-            setUser={this.props.setUser}
+           users={this.props.users}
+           setUser={this.props.setUser}
           />
-        </Card.Content>
-        {AddUserForm}
-      </Card>
+        </div>
+        <div style={formStyle}>
+          <UserForm
+            addUser={this.props.addUser}
+          />
+        </div>
+      </div>
     )
   }
 }
 
-var cardStyle = {
-  height : '50%'
+var listStyle = {
+  height: '95%',
+  boxSizing: 'border-box',
+  overflowX: 'hidden',
+  overflowY: 'auto',
+  position: 'relative'
 };
 
-var listStyle = {
-  overflow : 'auto'
+var cardStyle = {
+  display: 'block',
+  height : '100%'
 };
+
+var formStyle = {
+  position: 'absolute',
+  height: '5%',
+  width: '100%',
+};
+
+// var formStyle = {
+//   position: 'absolute',
+//   bottom : '10px'
+// };
 
 UserSection.propTypes = {
     users: PropTypes.array.isRequired,

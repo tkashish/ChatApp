@@ -6,7 +6,13 @@ import { List } from 'semantic-ui-react';
 class UserList extends Component{
   render(){
     return(
-      <List animated verticalAlign='middle' size={'big'}>{
+      <List
+        selection
+        style={listStyle}
+        animated
+        verticalAlign='middle'
+        size={'large'}
+      >{
           this.props.users.map( (user, index) =>{
             return <User
               user={user}
@@ -22,6 +28,11 @@ class UserList extends Component{
 UserList.propTypes = {
   users: PropTypes.array.isRequired,
   setUser: PropTypes.func.isRequired
+}
+
+var listStyle = {
+  maxWidth: 'none',
+  height: '100%'
 }
 
 export default UserList
