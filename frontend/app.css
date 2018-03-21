@@ -1,0 +1,19 @@
+.ui.card>.extra, .ui.cards>.card>.extra {
+  min-height: 60px !important;
+}
+
+.app{
+  display:flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  height: 100vh;
+  font-size: 16px;
+}
+
+body {
+  /* font-family: Camphor, Open Sans, Segoe UI, sans-serif !important; */
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: linear-gradient(to right, #cb356b, #bd3f32) !important;
+}
